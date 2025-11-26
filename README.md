@@ -3,9 +3,8 @@
 # Tarea de Grafos
 
 ## Integrantes: 
-- 1 ____   _____
-- 2 ____   _____
-- 3 ____   _____
+- 1 Rodrigo de la Puente Rizo Patrón
+- 2 Matías Sebastian Walde Verano
 
 ## Objetivo: 
 El objetivo de esta tarea es implementar un **Path Finder** para la ciudad de Lima. 
