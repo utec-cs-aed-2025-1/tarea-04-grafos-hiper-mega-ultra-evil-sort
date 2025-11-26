@@ -10,7 +10,7 @@
 El objetivo de esta tarea es implementar un **Path Finder** para la ciudad de Lima. 
 
 <p align="center">
-    <img src=https://github.com/utec-cs-aed/homework_graph/assets/79115974/b63f69db-17eb-417a-8aa1-8483d8dcdaf0 / >
+    <img src=https://github.com/utec-cs-aed/homework_graph/assets/79115974/b63f69db-17eb-417a-8aa1-8483d8dcdaf0 />
 </p>
 
 ## Dependencias

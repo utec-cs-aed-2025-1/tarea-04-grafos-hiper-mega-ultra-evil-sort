@@ -10,6 +10,7 @@ add_executable(${PROJECT_NAME} main.cpp
         edge.h
         window_manager.h
         path_finding_manager.h
+		main.cpp
 )
 
 find_package(SFML 2.5 COMPONENTS graphics window REQUIRED)

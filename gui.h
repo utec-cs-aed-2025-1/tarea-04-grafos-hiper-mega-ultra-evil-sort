@@ -10,6 +10,7 @@
 #include "path_finding_manager.h"
 
 #include <cmath>
+#include <iostream>
 #include <functional>
 
 
@@ -84,6 +85,12 @@ public:
                                 path_finding_manager.exec(graph, AStar);
                                 break;
                             }
+                            // B = Ejecutar GreedyBFS
+                            case sf::Keyboard::B: {
+                                path_finding_manager.exec(graph, GreedyBFS);
+                                break;
+                            }
+
                             // R = Limpia la ultima simulación realizada.
                             //     También restaura los valores de 'src' y 'dest' a nullptr.
                             case sf::Keyboard::R: {
