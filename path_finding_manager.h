@@ -72,57 +72,38 @@ class PathFindingManager {
 
             distance_table.insert({pair.first, std::make_pair(initialdist, false)});
         }
-        //std::cout << "reaches checkpoint 1\n";
         while (!pq.empty()) {
-            //std::cout << "new node being processed\n";
             std::pair<Node*, double> current_pair = pq.top();
-            //std::cout << "node edges: " << current_pair.first->edges.size() << "\n";
             //si el nodo no está visitado
             if (!distance_table[current_pair.first->id].second) {
                 double dist_to_curr = current_pair.second;
-                //std::cout << "dist_to_curr: " << dist_to_curr << "\n";
-                //std::cout << "a\n";
                 for (const auto& edge: current_pair.first->edges) {
                     sfLine line_to_add(edge->src->coord, edge->dest->coord, default_edge_color, default_thickness);
                     visited_edges.push_back(line_to_add);
-                    //std::cout << "b\n";
                     const double dist = edge->length / edge->max_speed;
                     if (edge->src->id == current_pair.first->id) {
-                        //std::cout << "c\n";
-                        //std::cout << "curr dist to dest: " << distance_table[edge->dest->id].first << "\n";
-                        //std::cout << "curr dist to src: " << distance_table[edge->src->id].first << "\n";
-                        //std::cout << "curr dist: " << dist << "\n";
                         if (distance_table[edge->dest->id].first > distance_table[edge->src->id].first + dist) {
                             distance_table[edge->dest->id].first = dist_to_curr+dist;
                             pq.emplace(edge->dest, dist_to_curr+dist);
-                            // parent.insert({edge->dest, edge->src});
                             parent[edge->dest] = edge->src;
-                            //std::cout << "d\n";
                         }
-                        //std::cout << "e\n";
                     } else if (edge->dest->id == current_pair.first->id && !edge->one_way) {
                         if (distance_table[edge->src->id].first > distance_table[edge->dest->id].first + dist) {
                             distance_table[edge->src->id].first = dist_to_curr+dist;
                             pq.emplace(edge->src, dist_to_curr+dist);
-                            //parent.insert({edge->src, edge->dest});
-                            //std::cout << "reaches checkpoint 2\n";
                             parent[edge->src] = edge->dest;
                         }
                     }
                 }
-                //std::cout << "f\n";
                 distance_table[current_pair.first->id].second = true;
                 if (current_pair.first->id == dest->id) {set_final_path(parent); return;}
-                //std::cout << "g\n";
                 if (counter < 10000) counter++; else counter = 0;
                 if (counter == 9999) render();
             }
             pq.pop();
 
-            //std::cout << "pop. pq size: " << pq.size() << "\n";
         }
         set_final_path(parent);
-        //std::cout << "finish dijkstra\n";
     }
 
     void a_star(Graph &graph) {
@@ -188,6 +169,7 @@ class PathFindingManager {
     }
 
     void greedy_bfs(Graph &graph) {
+          int counter = 0;
         std::unordered_map<Node*, Node*> parent;
         std::unordered_map<Node*, bool> visited;
 
@@ -208,16 +190,18 @@ class PathFindingManager {
             if (current.node == dest) { break; }
             for (Edge* edge : current.node->edges) {
                 Node* next = (edge->src == current.node) ? edge->dest : edge->src;
-                if (visited[next]) { continue; }
+
                 visited_edges.emplace_back(
                         current.node->coord,
                         next->coord,
-                        sf::Color::Yellow,
-                        1.5f
+                        default_edge_color,
+                        default_thickness
                 );
+                if (visited[next]) { continue; }
                 parent[next] = current.node;
                 pq.push({next, heuristic(next, dest)});
-                render();
+                if (counter < 50) counter++; else counter = 0;
+                if (counter == 49) render();
             }
         }
         set_final_path(parent);
