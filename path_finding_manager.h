@@ -53,17 +53,136 @@ class PathFindingManager {
         }
     };
 
-    void dijkstra(Graph &graph) {
+      void dijkstra(Graph &graph) {
+        int counter = 0;
+        //std::cout << "start dijkstra\n";
         std::unordered_map<Node *, Node *> parent;
         // TODO: Add your code here
+        auto cmp = [](const std::pair<Node*, double>& a, const std::pair<Node*, double>& b) {
+            return a.second > b.second;
+        };
+        std::priority_queue<std::pair<Node*, double>, std::vector<std::pair<Node*, double>>, decltype(cmp)> pq(cmp);
+        std::unordered_map<size_t, std::pair<double, bool>> distance_table;
+        for (const auto& pair: graph.nodes) {
+            double initialdist;
+            if (pair.second == src) {
+                initialdist = 0;
+                pq.emplace(pair.second, initialdist);
+            } else initialdist = std::numeric_limits<double>::infinity();
 
+            distance_table.insert({pair.first, std::make_pair(initialdist, false)});
+        }
+        //std::cout << "reaches checkpoint 1\n";
+        while (!pq.empty()) {
+            //std::cout << "new node being processed\n";
+            std::pair<Node*, double> current_pair = pq.top();
+            //std::cout << "node edges: " << current_pair.first->edges.size() << "\n";
+            //si el nodo no está visitado
+            if (!distance_table[current_pair.first->id].second) {
+                double dist_to_curr = current_pair.second;
+                //std::cout << "dist_to_curr: " << dist_to_curr << "\n";
+                //std::cout << "a\n";
+                for (const auto& edge: current_pair.first->edges) {
+                    sfLine line_to_add(edge->src->coord, edge->dest->coord, default_edge_color, default_thickness);
+                    visited_edges.push_back(line_to_add);
+                    //std::cout << "b\n";
+                    const double dist = edge->length / edge->max_speed;
+                    if (edge->src->id == current_pair.first->id) {
+                        //std::cout << "c\n";
+                        //std::cout << "curr dist to dest: " << distance_table[edge->dest->id].first << "\n";
+                        //std::cout << "curr dist to src: " << distance_table[edge->src->id].first << "\n";
+                        //std::cout << "curr dist: " << dist << "\n";
+                        if (distance_table[edge->dest->id].first > distance_table[edge->src->id].first + dist) {
+                            distance_table[edge->dest->id].first = dist_to_curr+dist;
+                            pq.emplace(edge->dest, dist_to_curr+dist);
+                            // parent.insert({edge->dest, edge->src});
+                            parent[edge->dest] = edge->src;
+                            //std::cout << "d\n";
+                        }
+                        //std::cout << "e\n";
+                    } else if (edge->dest->id == current_pair.first->id && !edge->one_way) {
+                        if (distance_table[edge->src->id].first > distance_table[edge->dest->id].first + dist) {
+                            distance_table[edge->src->id].first = dist_to_curr+dist;
+                            pq.emplace(edge->src, dist_to_curr+dist);
+                            //parent.insert({edge->src, edge->dest});
+                            //std::cout << "reaches checkpoint 2\n";
+                            parent[edge->src] = edge->dest;
+                        }
+                    }
+                }
+                //std::cout << "f\n";
+                distance_table[current_pair.first->id].second = true;
+                if (current_pair.first->id == dest->id) {set_final_path(parent); return;}
+                //std::cout << "g\n";
+                if (counter < 10000) counter++; else counter = 0;
+                if (counter == 9999) render();
+            }
+            pq.pop();
+
+            //std::cout << "pop. pq size: " << pq.size() << "\n";
+        }
         set_final_path(parent);
+        //std::cout << "finish dijkstra\n";
     }
 
-
     void a_star(Graph &graph) {
+        int counter = 0;
         std::unordered_map<Node *, Node *> parent;
-        // TODO: Add your code here
+        std::unordered_map<size_t, double> heur;
+        auto cmp = [](const std::pair<Node*, double>& a, const std::pair<Node*, double>& b) {
+            return a.second > b.second;
+        };
+        std::priority_queue<std::pair<Node*, double>, std::vector<std::pair<Node*, double>>, decltype(cmp)> pq(cmp);
+        std::unordered_map<size_t, std::pair<double, bool>> distance_table;
+
+        for (const auto& pair: graph.nodes) {
+            double initialdist;
+            if (pair.second == src) {
+                initialdist = 0;
+                pq.emplace(pair.second, initialdist);
+            } else initialdist = std::numeric_limits<double>::infinity();
+            distance_table.insert({pair.first, std::make_pair(initialdist, false)});
+
+            double heurdist = std::sqrt(std::fabs(dest->coord.x-pair.second->coord.x) *
+                    std::fabs(dest->coord.y-pair.second->coord.y));
+            heur.insert({pair.first, heurdist});
+        }
+
+
+        while (!pq.empty()) {
+            std::pair<Node*, double> current_pair = pq.top();
+            //si el nodo no está visitado
+            if (!distance_table[current_pair.first->id].second) {
+                double dist_to_curr = current_pair.second;
+                for (const auto& edge: current_pair.first->edges) {
+                    sfLine line_to_add(edge->src->coord, edge->dest->coord, default_edge_color, default_thickness);
+                    visited_edges.push_back(line_to_add);
+                    const double dist = edge->length / edge->max_speed;
+                    if (edge->src->id == current_pair.first->id) {
+                        if (distance_table[edge->dest->id].first > distance_table[edge->src->id].first + dist) {
+                            distance_table[edge->dest->id].first = dist_to_curr+dist;
+                            pq.emplace(edge->dest, dist_to_curr+dist+heur[edge->dest->id]);
+                            //parent.insert({edge->dest, edge->src});
+                            parent[edge->dest] = edge->src;
+                        }
+                    } else if (edge->dest->id == current_pair.first->id && !edge->one_way) {
+                        if (distance_table[edge->src->id].first > distance_table[edge->dest->id].first + dist) {
+                            distance_table[edge->src->id].first = dist_to_curr+dist;
+                            pq.emplace(edge->src, dist_to_curr+dist+heur[edge->src->id]);
+                            //parent.insert({edge->src, edge->dest});
+                            parent[edge->src] = edge->dest;
+                        }
+                    }
+                }
+                distance_table[current_pair.first->id].second = true;
+                if (current_pair.first->id == dest->id) {set_final_path(parent); return;}
+                if (counter < 10000) counter++; else counter = 0;
+                if (counter == 9999) render();
+            }
+            pq.pop();
+
+        }
+
 
         set_final_path(parent);
     }
