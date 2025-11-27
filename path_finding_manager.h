@@ -74,13 +74,15 @@ class PathFindingManager {
         }
         while (!pq.empty()) {
             std::pair<Node*, double> current_pair = pq.top();
+            pq.pop();
             //si el nodo no está visitado
             if (!distance_table[current_pair.first->id].second) {
                 double dist_to_curr = current_pair.second;
                 for (const auto& edge: current_pair.first->edges) {
                     sfLine line_to_add(edge->src->coord, edge->dest->coord, default_edge_color, default_thickness);
                     visited_edges.push_back(line_to_add);
-                    const double dist = edge->length / edge->max_speed;
+                    const double dist = std::sqrt(std::pow(edge->dest->coord.x-edge->src->coord.x, 2) +
+                    std::pow(edge->dest->coord.y-edge->src->coord.y, 2));
                     if (edge->src->id == current_pair.first->id) {
                         if (distance_table[edge->dest->id].first > distance_table[edge->src->id].first + dist) {
                             distance_table[edge->dest->id].first = dist_to_curr+dist;
@@ -97,10 +99,10 @@ class PathFindingManager {
                 }
                 distance_table[current_pair.first->id].second = true;
                 if (current_pair.first->id == dest->id) {set_final_path(parent); return;}
-                if (counter < 10000) counter++; else counter = 0;
-                if (counter == 9999) render();
+                if (counter < 1000) counter++; else counter = 0;
+                if (counter == 999) render();
             }
-            pq.pop();
+
 
         }
         set_final_path(parent);
@@ -115,52 +117,64 @@ class PathFindingManager {
         };
         std::priority_queue<std::pair<Node*, double>, std::vector<std::pair<Node*, double>>, decltype(cmp)> pq(cmp);
         std::unordered_map<size_t, std::pair<double, bool>> distance_table;
+          double startheur = std::sqrt(std::pow(dest->coord.x-src->coord.x, 2) +
+                    std::pow(dest->coord.y-src->coord.y, 2));
+          heur.insert({src->id, startheur});
 
         for (const auto& pair: graph.nodes) {
+
+            double heurdist = std::sqrt(std::pow(dest->coord.x-pair.second->coord.x, 2) +
+                   std::pow(dest->coord.y-pair.second->coord.y, 2));
+            heur.insert({pair.first, heurdist});
             double initialdist;
             if (pair.second == src) {
                 initialdist = 0;
-                pq.emplace(pair.second, initialdist);
+
+                pq.emplace(pair.second, heur[pair.second->id]);
             } else initialdist = std::numeric_limits<double>::infinity();
             distance_table.insert({pair.first, std::make_pair(initialdist, false)});
-
-            double heurdist = std::sqrt(std::fabs(dest->coord.x-pair.second->coord.x) *
-                    std::fabs(dest->coord.y-pair.second->coord.y));
-            heur.insert({pair.first, heurdist});
         }
 
 
         while (!pq.empty()) {
             std::pair<Node*, double> current_pair = pq.top();
+            pq.pop();
             //si el nodo no está visitado
             if (!distance_table[current_pair.first->id].second) {
-                double dist_to_curr = current_pair.second;
+                //calcular heurística del nodo actual
+                double heurdist = std::sqrt(std::pow(dest->coord.x-current_pair.first->coord.x, 2) +
+                   std::pow(dest->coord.y-current_pair.first->coord.y, 2));
+                heur.insert({current_pair.first->id, heurdist});
+                //dist_to_curr = g(n)
+                double dist_to_curr = distance_table[current_pair.first->id].first;
                 for (const auto& edge: current_pair.first->edges) {
                     sfLine line_to_add(edge->src->coord, edge->dest->coord, default_edge_color, default_thickness);
                     visited_edges.push_back(line_to_add);
-                    const double dist = edge->length / edge->max_speed;
+                    const double dist = std::sqrt(std::pow(edge->dest->coord.x-edge->src->coord.x, 2) +
+                    std::pow(edge->dest->coord.y-edge->src->coord.y, 2));
                     if (edge->src->id == current_pair.first->id) {
-                        if (distance_table[edge->dest->id].first > distance_table[edge->src->id].first + dist) {
-                            distance_table[edge->dest->id].first = dist_to_curr+dist;
+
+                        if (distance_table[edge->dest->id].first > dist_to_curr + dist) {
+                            //pq.push g(n)+dist+h(n)
                             pq.emplace(edge->dest, dist_to_curr+dist+heur[edge->dest->id]);
-                            //parent.insert({edge->dest, edge->src});
+                            //if distance change, change distance table
+                            distance_table[edge->dest->id].first = dist_to_curr+dist;
                             parent[edge->dest] = edge->src;
                         }
                     } else if (edge->dest->id == current_pair.first->id && !edge->one_way) {
                         if (distance_table[edge->src->id].first > distance_table[edge->dest->id].first + dist) {
                             distance_table[edge->src->id].first = dist_to_curr+dist;
                             pq.emplace(edge->src, dist_to_curr+dist+heur[edge->src->id]);
-                            //parent.insert({edge->src, edge->dest});
                             parent[edge->src] = edge->dest;
                         }
                     }
                 }
                 distance_table[current_pair.first->id].second = true;
                 if (current_pair.first->id == dest->id) {set_final_path(parent); return;}
-                if (counter < 10000) counter++; else counter = 0;
-                if (counter == 9999) render();
+                if (counter < 1000) counter++; else counter = 0;
+                if (counter == 999) render();
             }
-            pq.pop();
+
 
         }
 
@@ -200,8 +214,8 @@ class PathFindingManager {
                 if (visited[next]) { continue; }
                 parent[next] = current.node;
                 pq.push({next, heuristic(next, dest)});
-                if (counter < 50) counter++; else counter = 0;
-                if (counter == 49) render();
+                if (counter < 100) counter++; else counter = 0;
+                if (counter == 99) render();
             }
         }
         set_final_path(parent);
