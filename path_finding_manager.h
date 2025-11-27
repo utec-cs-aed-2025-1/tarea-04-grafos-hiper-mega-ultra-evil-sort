@@ -10,7 +10,9 @@
 #include "graph.h"
 #include <unordered_map>
 #include <queue>
-
+#include <utility>
+#include <vector>
+#include <limits>
 
 // Este enum sirve para identificar el algoritmo que el usuario desea simular
 enum Algorithm {
@@ -86,13 +88,13 @@ class PathFindingManager {
                     if (edge->src->id == current_pair.first->id) {
                         if (distance_table[edge->dest->id].first > distance_table[edge->src->id].first + dist) {
                             distance_table[edge->dest->id].first = dist_to_curr+dist;
-                            pq.emplace(edge->dest, dist_to_curr+dist);
+                            if (!distance_table[edge->dest->id].second) pq.emplace(edge->dest, dist_to_curr+dist);
                             parent[edge->dest] = edge->src;
                         }
                     } else if (edge->dest->id == current_pair.first->id && !edge->one_way) {
                         if (distance_table[edge->src->id].first > distance_table[edge->dest->id].first + dist) {
                             distance_table[edge->src->id].first = dist_to_curr+dist;
-                            pq.emplace(edge->src, dist_to_curr+dist);
+                            if (!distance_table[edge->src->id].second) pq.emplace(edge->src, dist_to_curr+dist);
                             parent[edge->src] = edge->dest;
                         }
                     }
@@ -156,7 +158,7 @@ class PathFindingManager {
 
                         if (distance_table[edge->dest->id].first > dist_to_curr + dist) {
                             //pq.push g(n)+dist+h(n)
-                            pq.emplace(edge->dest, dist_to_curr+dist+heur[edge->dest->id]);
+                            if (!distance_table[edge->dest->id].second) pq.emplace(edge->dest, dist_to_curr+dist+heur[edge->dest->id]);
                             //if distance change, change distance table
                             distance_table[edge->dest->id].first = dist_to_curr+dist;
                             parent[edge->dest] = edge->src;
@@ -164,7 +166,7 @@ class PathFindingManager {
                     } else if (edge->dest->id == current_pair.first->id && !edge->one_way) {
                         if (distance_table[edge->src->id].first > distance_table[edge->dest->id].first + dist) {
                             distance_table[edge->src->id].first = dist_to_curr+dist;
-                            pq.emplace(edge->src, dist_to_curr+dist+heur[edge->src->id]);
+                            if (!distance_table[edge->src->id].second) pq.emplace(edge->src, dist_to_curr+dist+heur[edge->src->id]);
                             parent[edge->src] = edge->dest;
                         }
                     }
